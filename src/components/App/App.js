@@ -32,6 +32,8 @@ class App extends React.Component {
       ],
     };
     this.addTrack = this.addTrack.bind(this);
+    this.removeTrack = this.removeTrack.bind(this);
+    this.updatePlaylistName = this.updatePlaylistName.bind(this);
   }
 
   addTrack(newTrack) {
@@ -45,6 +47,40 @@ class App extends React.Component {
     }
   }
 
+  removeTrack(doomedTrack) {
+    const newList = this.state.playListTracks.filter((track) => {
+      return track.id !== doomedTrack.id;
+    });
+    this.setState((prevState) => {
+      return {
+        playListTracks: newList,
+      };
+    });
+  }
+
+  updatePlaylistName(newPlaylistName) {
+    this.setState((prevState) => {
+      return { playListName: newPlaylistName };
+    });
+  }
+
+async function getToken() {
+  const response = await fetch('https://accounts.spotify.com/api/token', {
+    method: 'POST',
+    body: new URLSearchParams({
+      'grant_type': 'client_credentials',
+    }),
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Authorization': 'Basic ' + (Buffer.from(client_id + ':' + client_secret).toString('base64')),
+    },
+  });
+
+  return await response.json();
+}
+  savePlaylist (){
+
+  }
   render() {
     return (
       <div>
@@ -59,11 +95,15 @@ class App extends React.Component {
             <SearchResults
               searchResults={this.state.searchResults}
               onAdd={this.addTrack}
+              onRemove={this.removeTrack}
             />
             {/* Add a Playlist component */}
             <Playlist
               playListName={this.state.playListName}
               playListTracks={this.state.playListTracks}
+              onAdd={this.addTrack}
+              onRemove={this.removeTrack}
+              onNameChange={this.updatePlaylistName}
             />
           </div>
         </div>
