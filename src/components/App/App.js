@@ -3,6 +3,7 @@ import SearchBar from "../SearchBar/SearchBar";
 import SearchResults from "../SearchResults/SearchResults";
 import React from "react";
 import Playlist from "../Playlist/Playlist";
+import Spotify from "../../util/Spotify";
 
 class App extends React.Component {
   constructor(props) {
@@ -16,24 +17,22 @@ class App extends React.Component {
           name: "Endless Skies",
           artist: "Nova Pulse",
           album: "Dream Horizons",
+          uri: "spotify:track:6rqhFgbbKwnb9MLmUQDhG6", // or something similar
         },
         {
           id: 2,
           name: "Midnight Echo",
           artist: "Lunar Waves",
           album: "City Nights",
-        },
-        {
-          id: 3,
-          name: "Electric Bloom",
-          artist: "Solar Echo",
-          album: "Neon Garden",
+          uri: "spotify:track:7bZfrsQ3w7Dtw3aN8pVGfJ",
         },
       ],
     };
     this.addTrack = this.addTrack.bind(this);
     this.removeTrack = this.removeTrack.bind(this);
     this.updatePlaylistName = this.updatePlaylistName.bind(this);
+    this.savePlaylist = this.savePlaylist.bind(this);
+    this.search = this.search.bind(this);
   }
 
   addTrack(newTrack) {
@@ -51,36 +50,25 @@ class App extends React.Component {
     const newList = this.state.playListTracks.filter((track) => {
       return track.id !== doomedTrack.id;
     });
-    this.setState((prevState) => {
-      return {
-        playListTracks: newList,
-      };
+    this.setState({
+      playListTracks: newList,
     });
   }
 
   updatePlaylistName(newPlaylistName) {
-    this.setState((prevState) => {
-      return { playListName: newPlaylistName };
-    });
+    this.setState({ playListName: newPlaylistName });
   }
 
-async function getToken() {
-  const response = await fetch('https://accounts.spotify.com/api/token', {
-    method: 'POST',
-    body: new URLSearchParams({
-      'grant_type': 'client_credentials',
-    }),
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'Authorization': 'Basic ' + (Buffer.from(client_id + ':' + client_secret).toString('base64')),
-    },
-  });
-
-  return await response.json();
-}
-  savePlaylist (){
-
+  savePlaylist() {
+    const trackUri = this.playListTracks.map((track) => track.uri);
+    return trackUri;
   }
+
+  search(searchTerm) {
+    this.searchResults = Spotify.search(searchTerm);
+    console.log(`search results: ${this.searchResults}`);
+  }
+
   render() {
     return (
       <div>
@@ -89,7 +77,7 @@ async function getToken() {
         </h1>
         <div className="App">
           {/* Add a SearchBar component */}
-          <SearchBar />
+          <SearchBar onSearch={this.search} />
           <div className="App-playlist">
             {/* Add a SearchResults component */}
             <SearchResults
@@ -104,6 +92,7 @@ async function getToken() {
               onAdd={this.addTrack}
               onRemove={this.removeTrack}
               onNameChange={this.updatePlaylistName}
+              onSave={this.savePlaylist}
             />
           </div>
         </div>
