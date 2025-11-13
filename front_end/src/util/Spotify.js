@@ -13,11 +13,10 @@ const generateRandomString = (length) => {
 };
 
 const Spotify = {
-  scope:
-    "playlist-modify-public playlist-modify-private playlist-read-private playlist-read-collaborative",
-  clientId: "f269b3afc0e44d9d8d8c435f4a444396",
-  redirectUri: "http://127.0.0.1:3000/",
-  getAccessToken() {
+  scope: "playlist-modify-public playlist-modify-private",
+  clientId: "88a6808246d94fe29f93e2ac444280e6",
+  redirectUri: "http://127.0.0.1:8888/callback",
+  getAccessToken_copy() {
     // Return the token if we already have it
     if (userAccessToken) {
       return userAccessToken;
@@ -28,6 +27,11 @@ const Spotify = {
       const tokenMatch = hash.match(/access_token=([^&]*)/);
       const expiresMatch = hash.match(/expires_in=([^&]*)/);
       const stateMatch = hash.match(/state=([^&]*)/);
+      const error = hash.match(/error=([^&]*)/);
+
+      if (error) {
+        console.log(error);
+      }
 
       const storedState = localStorage.getItem(stateKey);
       // the tokenMatch checks if an access_token exists in the URL hash.
@@ -35,14 +39,14 @@ const Spotify = {
       // stateMatch checks if the URL contains the state parameter Spotify sent back.
       // stateMatch[1] is the actual state we sent to spotify ,we checking if it matches with the one stored in localstorage
 
-      if (
-        tokenMatch &&
-        expiresMatch &&
-        stateMatch &&
-        stateMatch[1] === storedState
-      ) {
+      // important------------------------------------
+      //    stateMatch &&
+      // stateMatch[1] === storedState
+      // the above two were optional now removed because the token is comming rom backend
+      if (tokenMatch && expiresMatch) {
+        console.log(`token match and expires match found`);
         //setting the access token
-        userAccessToken = tokenMatch[1];
+        // userAccessToken = tokenMatch[1];
 
         //the token expires in
         const expiresIn = Number(expiresMatch[1]);
@@ -60,13 +64,37 @@ const Spotify = {
       } else {
         console.error("State mismatch or missing token in URL.");
       }
-    } else {
-      // If no token, redirect user to Spotify authorization
-      const state = generateRandomString(16);
-      localStorage.setItem(stateKey, state);
+    }
+    // If no token, redirect user to Spotify authorization
+    console.log("sending user to the spotify login page");
+    const state = generateRandomString(16);
+    localStorage.setItem(stateKey, state);
 
+    // const loginUrl = `https://accounts.spotify.com/authorize?response_type=token&client_id=${encodeURIComponent(
+    //   this.clientId
+    // )}&scope=${encodeURIComponent(
+    //   this.scope
+    // )}&redirect_uri=${encodeURIComponent(this.redirectUri)}`;
+
+    let authUrl = "https://accounts.spotify.com/authorize";
+    authUrl += "?response_type=code";
+    authUrl += "&client_id=" + encodeURIComponent(this.clientId);
+    authUrl += "&scope=" + encodeURIComponent(this.scope);
+    authUrl += "&redirect_uri=" + encodeURIComponent(this.redirectUri);
+    authUrl += "&state=" + encodeURIComponent(state);
+    // encodeURIComponent(this.clientId);
+    window.location.href = authUrl;
+  },
+  getAccessToken() {
+    // Return the token if we already have it
+    const access_token = localStorage.getItem("spotify_access_token");
+    if (access_token) {
+      return access_token;
+    } else {
+      //get state
+      const state = generateRandomString(16);
       let authUrl = "https://accounts.spotify.com/authorize";
-      authUrl += "?response_type=token";
+      authUrl += "?response_type=code";
       authUrl += "&client_id=" + encodeURIComponent(this.clientId);
       authUrl += "&scope=" + encodeURIComponent(this.scope);
       authUrl += "&redirect_uri=" + encodeURIComponent(this.redirectUri);
@@ -75,8 +103,10 @@ const Spotify = {
       window.location.href = authUrl;
     }
   },
+
   search(searchTerm) {
     const accessToken = this.getAccessToken();
+    console.log(`access token ================ ${accessToken}`);
     return new Promise((resolve, reject) => {
       fetch(
         `https://api.spotify.com/v1/search?type=track&q=${encodeURIComponent(
